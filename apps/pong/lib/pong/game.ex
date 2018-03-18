@@ -2,7 +2,10 @@ defmodule Pong.Game do
 
   @halfWidth 300
   @halfHeight 200
-  defstruct playing: false, ball: Ball, player1: Player, player2: Player
+  defstruct playing: false,
+            ball: Ball,
+            player1: Player,
+            player2: Player
 
   alias Pong.{Game, Player, Ball}
 
@@ -23,21 +26,40 @@ defmodule Pong.Game do
   end
 
   defp update game, player, direction do
-    p = Map.get(game, player) |> Map.put(:direction, direction)
-    Map.put(game, player, p)
+    Map.put(game, player, Map.put(Map.get(game, player), :direction, direction))
   end
 
   def update game, delta do
-    score1 = if game.ball.x >  @halfWidth, do: 1, else: 0
-    score2 = if game.ball.x < -@halfWidth, do: 1, else: 0
+    points1 = if game.ball.x >  @halfWidth, do: 1, else: 0
+    points2 = if game.ball.x < -@halfWidth, do: 1, else: 0
+    playing = if points1 != points2 do
+      false
+    else
+      true
+    end
     newBall = if game.playing do
       updateBall(delta, game.ball, game.player1, game.player2)
     else
       game.ball
     end
-    player1 = %{ game.player1 | score: game.player1.score + score1 }
-    player2 = %{ game.player2 | score: game.player2.score + score2 }
-    %Game{ game | player1: player1, player2: player2, ball: newBall }
+    player1 = updatePlayer(delta, points1, game.player1)
+    player2 = updatePlayer(delta, points2, game.player2)
+    %Game{game | playing: playing, ball: newBall, player1: player1, player2: player2}
+  end
+
+  defp updatePlayer delta, points, player do
+    movedPlayer = physicsUpdate(delta, %{player | vy: player.direction * 200.0})
+    %{movedPlayer | y: clamp(22-@halfHeight, @halfHeight-22, movedPlayer.y),
+                    score: movedPlayer.score + points,
+                    direction: 0}
+  end
+
+  defp clamp lower, upper, number do
+    cond do
+      number < lower -> lower
+      number > upper -> upper
+      true -> number
+    end
   end
 
   defp updateBall delta, ball, paddle1, paddle2 do
