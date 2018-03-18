@@ -35,7 +35,7 @@ defmodule Pong.Game do
     playing = if points1 != points2 do
       false
     else
-      true
+      game.playing
     end
     newBall = if game.playing do
       updateBall(delta, game.ball, game.player1, game.player2)
