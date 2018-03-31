@@ -1,0 +1,6 @@
+<div id="game-container" class="jumbotron"
+     data-player-id="<%= @player_id %>"
+     data-auth-token="<%= @auth_token %>"
+     data-ws-url="<%= ws_url() %>">
+  GAME GOES HERE
+</div>
