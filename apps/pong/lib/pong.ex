@@ -1,18 +1,10 @@
 defmodule Pong do
-  @moduledoc """
-  Documentation for Pong.
-  """
+  use Application
 
-  @doc """
-  Hello world.
+  def start(_type, _args) do
+    children = [Pong.GameServer]
 
-  ## Examples
-
-      iex> Pong.hello
-      :world
-
-  """
-  def hello do
-    :world
+    opts = [strategy: :one_for_one, name: Pong.Supervisor]
+    Supervisor.start_link(children, opts)
   end
 end

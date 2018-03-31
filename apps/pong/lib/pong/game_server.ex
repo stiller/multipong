@@ -6,7 +6,7 @@ defmodule Pong.GameServer do
 
   alias Pong.Game
 
-  def start_link do
+  def start_link(_args) do
     IO.puts "Starting the game erver with #{@interval} millisecond interval..."
     GenServer.start_link(__MODULE__, Game.new, name: @name)
   end
