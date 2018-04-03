@@ -2,7 +2,7 @@ defmodule MultipongWeb.UserSocket do
   use Phoenix.Socket
 
   ## Channels
-  # channel "room:*", MultipongWeb.RoomChannel
+  channel "game", MultipongWeb.GameChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
@@ -27,6 +27,8 @@ defmodule MultipongWeb.UserSocket do
         :error
     end
   end
+
+  def connect(_params, _socket), do: :error
 
   # Socket id's are topics that allow you to identify all sockets for a given user:
   #
