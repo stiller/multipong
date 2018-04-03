@@ -14,6 +14,10 @@ defmodule MultipongWeb.GameChannel do
     end
   end
 
+  def output output do
+    MultipongWeb.Endpoint.broadcast!("game", "output", output)
+  end
+
   def handle_info({:after_join, output}, socket) do
     push(socket, "output", output)
     {:noreply, socket}

@@ -27,10 +27,10 @@ defmodule Pong.GameServer do
 
   def handle_info(:update, state) do
     new_game = Game.update(state, @interval / 1000.0)
-    if new_game.playing do
-      schedule_update()
+    if new_game.playing, do: schedule_update()
+    if handler = Application.get_env(:pong, :handler) do
+      handler.output(new_game)
     end
-    MultipongWeb.Endpoint.broadcast!("game", "output", new_game)
     {:noreply, new_game}
   end
 
