@@ -19,6 +19,13 @@ defmodule MultipongWeb.GameChannel do
     {:noreply, socket}
   end
 
-  defp is_game?(%Pong.Game{}), do: true
-  defp is_game?(_), do: false
+  def handle_in("input", input, socket) do
+    GameServer.input(current_player(socket), input)
+    {:noreply, socket}
+  end
+
+  defp current_player(socket) do
+    String.to_atom(socket.assigns.current_player)
+  end
+
 end

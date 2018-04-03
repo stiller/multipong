@@ -17,7 +17,7 @@ defmodule Pong.Game do
          }
   end
 
-  def input game, player, input do
+  def input(game, player, input) when is_atom(player) do
     case input do
       "space" -> %Game{ game | playing: !game.playing }
       "up" -> update(game, player, 1)
