@@ -22,17 +22,22 @@ defmodule Pong.GameServer do
   # Callbacks
 
   def init(state) do
-    schedule_update()
     {:ok, state}
   end
 
   def handle_info(:update, state) do
-    schedule_update()
-    {:noreply, Game.update(state, @interval / 1000.0)}
+    new_game = Game.update(state, @interval / 1000.0)
+    if new_game.playing do
+      schedule_update()
+    end
+    MultipongWeb.Endpoint.broadcast!("game", "output", new_game)
+    {:noreply, new_game}
   end
 
   def handle_cast({:input, player, input}, state) do
-    {:noreply, Game.input(state, player, input)}
+    new_game = Game.input(state, player, input)
+    schedule_update()
+    {:noreply, new_game}
   end
 
   def handle_call(:output, _from, state) do

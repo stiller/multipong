@@ -24,8 +24,12 @@ defmodule MultipongWeb.GameChannel do
     {:noreply, socket}
   end
 
+  def handle_in("output", output, socket) do
+    Logger.info "output: #{output}"
+    {:noreply, socket}
+  end
+
   defp current_player(socket) do
     String.to_atom(socket.assigns.current_player)
   end
-
 end
