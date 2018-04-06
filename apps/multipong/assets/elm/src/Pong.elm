@@ -28,11 +28,12 @@ init flags =
   let
     socketUrl = flags.wsUrl ++ "?token=" ++ flags.authToken
     socket = Phoenix.Socket.init socketUrl
+      |> Phoenix.Socket.on "output" "game" ReceiveGameSummary
       |> Phoenix.Socket.withDebug
     channel = Phoenix.Channel.init "game"
     ( newSocket, phxCmd ) = Phoenix.Socket.join channel socket
   in
-  (initialGame socket, Cmd.map PhoenixMsg phxCmd)--initialSizeCmd)
+  (initialGame socket, Cmd.map PhoenixMsg phxCmd)
 
 main = Html.programWithFlags
             { init = init
@@ -50,9 +51,8 @@ main = Html.programWithFlags
 
 type Msg = KeyDown KeyCode
          | KeyUp KeyCode
---         | WindowResize (Int,Int)
-         | Tick Float
          | NoOp
+         | ReceiveGameSummary Decode.Value
          | PhoenixMsg (Phoenix.Socket.Msg Msg)
 
 getInput : Game -> Float -> Input
@@ -81,13 +81,14 @@ update msg game =
         ({ game | keysDown = Set.insert key game.keysDown }, cmd)
     KeyUp key ->
       ({ game | keysDown = Set.remove key game.keysDown }, Cmd.none)
-    Tick delta ->
-      let input = getInput game delta
-      in (updateGame input game, Cmd.none)
---    WindowResize dim ->
---      ({game | windowDimensions = dim}, Cmd.none)
     NoOp ->
       (game, Cmd.none)
+    ReceiveGameSummary payload ->
+      case decodeBall payload of
+        Ok  newBall ->
+          ( { game | ball = newBall}, Cmd.none )
+        Err _ ->
+          (game, Cmd.none)
     PhoenixMsg msg ->
       let
         ( phxSocket, phxCmd ) = Phoenix.Socket.update msg game.phxSocket
@@ -96,28 +97,22 @@ update msg game =
         , Cmd.map PhoenixMsg phxCmd
         )
 
+decodeBall payload =
+  Decode.decodeValue (Decode.at ["ball"] ballDecoder) payload
+
+ballDecoder =
+  Decode.map4 Ball
+    (field "x"  Decode.float)
+    (field "y"  Decode.float)
+    (field "vx" Decode.float)
+    (field "vy" Decode.float)
+
 subscriptions model =
     Sub.batch
         [ Keyboard.downs KeyDown
         , Keyboard.ups KeyUp
---        , Window.resizes sizeToMsg
-        , AnimationFrame.diffs Tick
         , Phoenix.Socket.listen model.phxSocket PhoenixMsg
         ]
-
--- initialSizeCmd/sizeToMsg technique taken from this answer :
---     https://www.reddit.com/r/elm/comments/4jfo32/getting_the_initial_window_dimensions/d369kw1/
---
--- to this question :
---     https://www.reddit.com/r/elm/comments/4jfo32/getting_the_initial_window_dimensions/
-
--- initialSizeCmd : Cmd Msg
--- initialSizeCmd =
---   Task.perform sizeToMsg (Window.size)
---
--- sizeToMsg : Window.Size -> Msg
--- sizeToMsg size =
---   WindowResize (size.width, size.height)
 
 -- MODEL
 
