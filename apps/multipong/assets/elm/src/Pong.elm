@@ -9,17 +9,30 @@ import Char
 import Time exposing (..)
 import Window
 import Html exposing (..)
+import Json.Decode as Decode exposing (Decoder, field)
+import Json.Encode as Encode
 import Keyboard exposing (..)
 import Set exposing (Set)
 import Task
 import AnimationFrame
+import Phoenix.Socket exposing (Socket)
+import Phoenix.Channel exposing (Channel)
+import Phoenix.Push
 
 type alias Flags =
   { authToken : String
   , wsUrl : String }
 
 init : Flags -> ( Game, Cmd Msg )
-init flags = (initialGame, Cmd.none)--initialSizeCmd)
+init flags =
+  let
+    socketUrl = flags.wsUrl ++ "?token=" ++ flags.authToken
+    socket = Phoenix.Socket.init socketUrl
+      |> Phoenix.Socket.withDebug
+    channel = Phoenix.Channel.init "game"
+    ( newSocket, phxCmd ) = Phoenix.Socket.join channel socket
+  in
+  (initialGame socket, Cmd.map PhoenixMsg phxCmd)--initialSizeCmd)
 
 main = Html.programWithFlags
             { init = init
@@ -40,6 +53,7 @@ type Msg = KeyDown KeyCode
 --         | WindowResize (Int,Int)
          | Tick Float
          | NoOp
+         | PhoenixMsg (Phoenix.Socket.Msg Msg)
 
 getInput : Game -> Float -> Input
 getInput game delta
@@ -55,7 +69,16 @@ getInput game delta
 update msg game =
   case msg of
     KeyDown key ->
-      ({ game | keysDown = Set.insert key game.keysDown }, Cmd.none)
+      let
+        pushMsg = Phoenix.Push.init "input" "game"
+          |> Phoenix.Push.withPayload (Encode.string "space")
+        ( newSocket, phxCmd ) = Phoenix.Socket.push pushMsg game.phxSocket
+        cmd = if key == Char.toCode ' ' then
+            Cmd.map PhoenixMsg phxCmd
+          else
+            Cmd.none
+      in
+        ({ game | keysDown = Set.insert key game.keysDown }, cmd)
     KeyUp key ->
       ({ game | keysDown = Set.remove key game.keysDown }, Cmd.none)
     Tick delta ->
@@ -65,13 +88,21 @@ update msg game =
 --      ({game | windowDimensions = dim}, Cmd.none)
     NoOp ->
       (game, Cmd.none)
+    PhoenixMsg msg ->
+      let
+        ( phxSocket, phxCmd ) = Phoenix.Socket.update msg game.phxSocket
+      in
+        ( { game | phxSocket = phxSocket }
+        , Cmd.map PhoenixMsg phxCmd
+        )
 
-subscriptions _ =
+subscriptions model =
     Sub.batch
         [ Keyboard.downs KeyDown
         , Keyboard.ups KeyUp
 --        , Window.resizes sizeToMsg
         , AnimationFrame.diffs Tick
+        , Phoenix.Socket.listen model.phxSocket PhoenixMsg
         ]
 
 -- initialSizeCmd/sizeToMsg technique taken from this answer :
@@ -116,7 +147,8 @@ type alias Game =
     state: State,
     ball: Ball,
     player1: Player,
-    player2: Player
+    player2: Player,
+    phxSocket : Phoenix.Socket.Socket Msg
   }
 
 player : Float -> Player
@@ -134,13 +166,14 @@ initialPlayer1 = player (20 - halfWidth)
 
 initialPlayer2 = player (halfWidth - 20)
 
-initialGame =
+initialGame socket =
   { keysDown = Set.empty
   , windowDimensions = (600,400)
   , state   = Pause
   , ball    = initialBall
   , player1 = initialPlayer1
   , player2 = initialPlayer2
+  , phxSocket = socket
   }
 
 type alias Input = {
@@ -170,18 +203,18 @@ updateGame {space, reset, pause, dir, delta} ({state, ball, player1, player2} as
             else updateBall delta ball player1 player2
 
   in
-      if reset
-         then { game | state   = Pause
-                     , ball    = initialBall
-                     , player1 = initialPlayer1
-                     , player2 = initialPlayer2
-              }
+    if reset
+    then { game | state   = Pause
+                , ball    = initialBall
+                , player1 = initialPlayer1
+                , player2 = initialPlayer2
+        }
 
-         else { game | state   = newState
-                     , ball    = newBall
-                     , player1 = updatePlayer delta dir score1 player1
-                     , player2 = updateComputer newBall score2 player2
-              }
+    else { game | state   = newState
+                , ball    = newBall
+                , player1 = updatePlayer delta dir score1 player1
+                , player2 = updateComputer newBall score2 player2
+        }
 
 updateBall : Time -> Ball -> Player -> Player -> Ball
 updateBall t ({x, y, vx, vy} as ball) p1 p2 =
