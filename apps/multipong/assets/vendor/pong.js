@@ -13230,6 +13230,28 @@ var _user$project$Pong$Player = F5(
 	function (a, b, c, d, e) {
 		return {x: a, y: b, vx: c, vy: d, score: e};
 	});
+var _user$project$Pong$playerDecoder = A6(
+	_elm_lang$core$Json_Decode$map5,
+	_user$project$Pong$Player,
+	A2(_elm_lang$core$Json_Decode$field, 'x', _elm_lang$core$Json_Decode$float),
+	A2(_elm_lang$core$Json_Decode$field, 'y', _elm_lang$core$Json_Decode$float),
+	A2(_elm_lang$core$Json_Decode$field, 'vx', _elm_lang$core$Json_Decode$float),
+	A2(_elm_lang$core$Json_Decode$field, 'vy', _elm_lang$core$Json_Decode$float),
+	A2(_elm_lang$core$Json_Decode$field, 'score', _elm_lang$core$Json_Decode$int));
+var _user$project$Pong$decodePlayer = F2(
+	function (payload, player) {
+		return A2(
+			_elm_lang$core$Json_Decode$decodeValue,
+			A2(
+				_elm_lang$core$Json_Decode$at,
+				{
+					ctor: '::',
+					_0: player,
+					_1: {ctor: '[]'}
+				},
+				_user$project$Pong$playerDecoder),
+			payload);
+	});
 var _user$project$Pong$Game = F7(
 	function (a, b, c, d, e, f, g) {
 		return {keysDown: a, windowDimensions: b, state: c, ball: d, player1: e, player2: f, phxSocket: g};
@@ -13247,17 +13269,18 @@ var _user$project$Pong$update = F2(
 		switch (_p15.ctor) {
 			case 'KeyDown':
 				var _p17 = _p15._0;
+				var input = _elm_lang$core$Native_Utils.eq(
+					_p17,
+					_elm_lang$core$Char$toCode(
+						_elm_lang$core$Native_Utils.chr(' '))) ? 'space' : (_elm_lang$core$Native_Utils.eq(_p17, 38) ? 'up' : (_elm_lang$core$Native_Utils.eq(_p17, 40) ? 'down' : 'noop'));
 				var pushMsg = A2(
 					_fbonetti$elm_phoenix_socket$Phoenix_Push$withPayload,
-					_elm_lang$core$Json_Encode$string('space'),
+					_elm_lang$core$Json_Encode$string(input),
 					A2(_fbonetti$elm_phoenix_socket$Phoenix_Push$init, 'input', 'game'));
 				var _p16 = A2(_fbonetti$elm_phoenix_socket$Phoenix_Socket$push, pushMsg, game.phxSocket);
 				var newSocket = _p16._0;
 				var phxCmd = _p16._1;
-				var cmd = _elm_lang$core$Native_Utils.eq(
-					_p17,
-					_elm_lang$core$Char$toCode(
-						_elm_lang$core$Native_Utils.chr(' '))) ? A2(_elm_lang$core$Platform_Cmd$map, _user$project$Pong$PhoenixMsg, phxCmd) : _elm_lang$core$Platform_Cmd$none;
+				var cmd = (!_elm_lang$core$Native_Utils.eq(input, 'noop')) ? A2(_elm_lang$core$Platform_Cmd$map, _user$project$Pong$PhoenixMsg, phxCmd) : _elm_lang$core$Platform_Cmd$none;
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
@@ -13280,22 +13303,39 @@ var _user$project$Pong$update = F2(
 			case 'NoOp':
 				return {ctor: '_Tuple2', _0: game, _1: _elm_lang$core$Platform_Cmd$none};
 			case 'ReceiveGameSummary':
-				var _p18 = _user$project$Pong$decodeBall(_p15._0);
-				if (_p18.ctor === 'Ok') {
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							game,
-							{ball: _p18._0}),
-						_1: _elm_lang$core$Platform_Cmd$none
-					};
-				} else {
-					return {ctor: '_Tuple2', _0: game, _1: _elm_lang$core$Platform_Cmd$none};
-				}
+				var _p21 = _p15._0;
+				var player2 = function () {
+					var _p18 = A2(_user$project$Pong$decodePlayer, _p21, 'player2');
+					if (_p18.ctor === 'Ok') {
+						return _p18._0;
+					} else {
+						return _user$project$Pong$initialPlayer1;
+					}
+				}();
+				var player1 = function () {
+					var _p19 = A2(_user$project$Pong$decodePlayer, _p21, 'player1');
+					if (_p19.ctor === 'Ok') {
+						return _p19._0;
+					} else {
+						return _user$project$Pong$initialPlayer1;
+					}
+				}();
+				var ball = function () {
+					var _p20 = _user$project$Pong$decodeBall(_p21);
+					if (_p20.ctor === 'Ok') {
+						return _p20._0;
+					} else {
+						return game.ball;
+					}
+				}();
+				var newGame = _elm_lang$core$Native_Utils.update(
+					game,
+					{ball: ball, player1: player1, player2: player2});
+				return {ctor: '_Tuple2', _0: newGame, _1: _elm_lang$core$Platform_Cmd$none};
 			default:
-				var _p19 = A2(_fbonetti$elm_phoenix_socket$Phoenix_Socket$update, _p15._0, game.phxSocket);
-				var phxSocket = _p19._0;
-				var phxCmd = _p19._1;
+				var _p22 = A2(_fbonetti$elm_phoenix_socket$Phoenix_Socket$update, _p15._0, game.phxSocket);
+				var phxSocket = _p22._0;
+				var phxCmd = _p22._1;
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
@@ -13356,9 +13396,9 @@ var _user$project$Pong$init = function (flags) {
 			'game',
 			_user$project$Pong$ReceiveGameSummary,
 			_fbonetti$elm_phoenix_socket$Phoenix_Socket$init(socketUrl)));
-	var _p20 = A2(_fbonetti$elm_phoenix_socket$Phoenix_Socket$join, channel, socket);
-	var newSocket = _p20._0;
-	var phxCmd = _p20._1;
+	var _p23 = A2(_fbonetti$elm_phoenix_socket$Phoenix_Socket$join, channel, socket);
+	var newSocket = _p23._0;
+	var phxCmd = _p23._1;
 	return {
 		ctor: '_Tuple2',
 		_0: _user$project$Pong$initialGame(socket),
@@ -13381,28 +13421,28 @@ var _user$project$Pong$main = _elm_lang$html$Html$programWithFlags(
 		A2(_elm_lang$core$Json_Decode$field, 'authToken', _elm_lang$core$Json_Decode$string)));
 var _user$project$Pong$Play = {ctor: 'Play'};
 var _user$project$Pong$updateGame = F2(
-	function (_p22, _p21) {
-		var _p23 = _p22;
-		var _p30 = _p23.delta;
-		var _p24 = _p21;
-		var _p29 = _p24.state;
-		var _p28 = _p24.player2;
-		var _p27 = _p24.player1;
-		var _p26 = _p24;
-		var _p25 = _p24.ball;
-		var newBall = _elm_lang$core$Native_Utils.eq(_p29, _user$project$Pong$Pause) ? _p25 : A4(_user$project$Pong$updateBall, _p30, _p25, _p27, _p28);
-		var score2 = (_elm_lang$core$Native_Utils.cmp(_p25.x, 0 - _user$project$Pong$halfWidth) < 0) ? 1 : 0;
-		var score1 = (_elm_lang$core$Native_Utils.cmp(_p25.x, _user$project$Pong$halfWidth) > 0) ? 1 : 0;
-		var newState = _p23.space ? _user$project$Pong$Play : (_p23.pause ? _user$project$Pong$Pause : ((!_elm_lang$core$Native_Utils.eq(score1, score2)) ? _user$project$Pong$Pause : _p29));
-		return _p23.reset ? _elm_lang$core$Native_Utils.update(
-			_p26,
+	function (_p25, _p24) {
+		var _p26 = _p25;
+		var _p33 = _p26.delta;
+		var _p27 = _p24;
+		var _p32 = _p27.state;
+		var _p31 = _p27.player2;
+		var _p30 = _p27.player1;
+		var _p29 = _p27;
+		var _p28 = _p27.ball;
+		var newBall = _elm_lang$core$Native_Utils.eq(_p32, _user$project$Pong$Pause) ? _p28 : A4(_user$project$Pong$updateBall, _p33, _p28, _p30, _p31);
+		var score2 = (_elm_lang$core$Native_Utils.cmp(_p28.x, 0 - _user$project$Pong$halfWidth) < 0) ? 1 : 0;
+		var score1 = (_elm_lang$core$Native_Utils.cmp(_p28.x, _user$project$Pong$halfWidth) > 0) ? 1 : 0;
+		var newState = _p26.space ? _user$project$Pong$Play : (_p26.pause ? _user$project$Pong$Pause : ((!_elm_lang$core$Native_Utils.eq(score1, score2)) ? _user$project$Pong$Pause : _p32));
+		return _p26.reset ? _elm_lang$core$Native_Utils.update(
+			_p29,
 			{state: _user$project$Pong$Pause, ball: _user$project$Pong$initialBall, player1: _user$project$Pong$initialPlayer1, player2: _user$project$Pong$initialPlayer2}) : _elm_lang$core$Native_Utils.update(
-			_p26,
+			_p29,
 			{
 				state: newState,
 				ball: newBall,
-				player1: A4(_user$project$Pong$updatePlayer, _p30, _p23.dir, score1, _p27),
-				player2: A3(_user$project$Pong$updateComputer, newBall, score2, _p28)
+				player1: A4(_user$project$Pong$updatePlayer, _p33, _p26.dir, score1, _p30),
+				player2: A3(_user$project$Pong$updateComputer, newBall, score2, _p31)
 			});
 	});
 

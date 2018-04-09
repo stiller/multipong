@@ -70,10 +70,20 @@ update msg game =
   case msg of
     KeyDown key ->
       let
+        input = if key == Char.toCode ' ' then
+            "space"
+          else if key == 38 then
+            "up"
+          else if key == 40 then
+            "down"
+          else
+            "noop"
+
         pushMsg = Phoenix.Push.init "input" "game"
-          |> Phoenix.Push.withPayload (Encode.string "space")
+          |> Phoenix.Push.withPayload (Encode.string input)
         ( newSocket, phxCmd ) = Phoenix.Socket.push pushMsg game.phxSocket
-        cmd = if key == Char.toCode ' ' then
+
+        cmd = if input /= "noop" then
             Cmd.map PhoenixMsg phxCmd
           else
             Cmd.none
@@ -84,11 +94,22 @@ update msg game =
     NoOp ->
       (game, Cmd.none)
     ReceiveGameSummary payload ->
-      case decodeBall payload of
-        Ok  newBall ->
-          ( { game | ball = newBall}, Cmd.none )
-        Err _ ->
-          (game, Cmd.none)
+      let
+        ball = case decodeBall payload of
+          Ok  ball -> ball
+          Err _ -> game.ball
+
+        player1 = case (decodePlayer payload "player1") of
+          Ok  player -> player
+          Err _ -> initialPlayer1
+
+        player2 = case (decodePlayer payload "player2") of
+          Ok  player -> player
+          Err _ -> initialPlayer1
+
+        newGame = { game | ball = ball, player1 = player1, player2 = player2 }
+      in
+        ( newGame, Cmd.none )
     PhoenixMsg msg ->
       let
         ( phxSocket, phxCmd ) = Phoenix.Socket.update msg game.phxSocket
@@ -99,6 +120,17 @@ update msg game =
 
 decodeBall payload =
   Decode.decodeValue (Decode.at ["ball"] ballDecoder) payload
+
+decodePlayer payload player =
+  Decode.decodeValue (Decode.at [player] playerDecoder) payload
+
+playerDecoder =
+  Decode.map5 Player
+    (field "x"  Decode.float)
+    (field "y"  Decode.float)
+    (field "vx" Decode.float)
+    (field "vy" Decode.float)
+    (field "score" Decode.int)
 
 ballDecoder =
   Decode.map4 Ball
