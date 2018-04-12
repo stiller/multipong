@@ -12981,7 +12981,7 @@ var _user$project$Pong$make = F2(
 			{ctor: '_Tuple2', _0: obj.x, _1: obj.y},
 			A2(_evancz$elm_graphics$Collage$filled, _elm_lang$core$Color$white, shape));
 	});
-var _user$project$Pong$pauseMessage = 'SPACE to start and pause, R to reset, WS and &uarr;&darr; to move';
+var _user$project$Pong$pauseMessage = 'SPACE to start and pause, &uarr;&darr; to move';
 var _user$project$Pong$textGreen = A3(_elm_lang$core$Color$rgb, 160, 200, 160);
 var _user$project$Pong$txt = function (f) {
 	return function (_p0) {
@@ -13082,7 +13082,15 @@ var _user$project$Pong$view = function (_p3) {
 											_evancz$elm_graphics$Collage$move,
 											{ctor: '_Tuple2', _0: 0, _1: (_user$project$Pong$gameHeight / 2) - 40},
 											_evancz$elm_graphics$Collage$toForm(scores)),
-										_1: {ctor: '[]'}
+										_1: {
+											ctor: '::',
+											_0: A2(
+												_evancz$elm_graphics$Collage$move,
+												{ctor: '_Tuple2', _0: 0, _1: 40 - (_user$project$Pong$gameHeight / 2)},
+												_evancz$elm_graphics$Collage$toForm(
+													A2(_user$project$Pong$txt, _elm_lang$core$Basics$identity, _user$project$Pong$pauseMessage))),
+											_1: {ctor: '[]'}
+										}
 									}
 								}
 							}

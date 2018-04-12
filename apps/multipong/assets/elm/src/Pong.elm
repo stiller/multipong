@@ -275,6 +275,8 @@ view { ball, player1, player2 } =
                         |> make player2
                     , toForm scores
                         |> move ( 0, gameHeight / 2 - 40 )
+                    , toForm (txt identity pauseMessage)
+                        |> move ( 0, 40 - gameHeight / 2 )
                     ]
 
 
@@ -295,7 +297,7 @@ txt f =
 
 
 pauseMessage =
-    "SPACE to start and pause, R to reset, WS and &uarr;&darr; to move"
+    "SPACE to start and pause, &uarr;&darr; to move"
 
 
 make obj shape =
