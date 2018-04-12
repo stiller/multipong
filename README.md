@@ -9,6 +9,7 @@ Please allow some time for the dyno to spin up. If multiple people try to contro
 
 # Why?
 
+I wanted to develop my Elixir and Elm skills and I figured a mutiplayer game would really exercise the whole stack. I had come across the original [Elm Pong game](http://elm-lang.org:1234/examples/pong) some years ago and decided to make it multiplayer and move all the game state to the server. After completing the excellent [Elm](https://pragmaticstudio.com/courses/elm), [Elixir](https://pragmaticstudio.com/courses/elixir) and the first part of the [Elm + Elixir](https://pragmaticstudio.com/courses/unpacked-bingo) courses by The Pragmatic Studio, I was confident enough to try.
      
 # How?
 
@@ -22,10 +23,11 @@ After testing this from an IEx shell, I added a separate Phoenix app, with the s
 Then I set to work to replace all the client-side game state updates with calls to and from the Phoenix backend:
 https://github.com/stiller/multipong/blob/master/apps/multipong/assets/elm/src/Pong.elm
 
-To watch this process, you can checkout commits 
+To watch this process, you can checkout commits:
 https://github.com/stiller/multipong/commit/77b06ff76af740869e1cfd562481e21d719420f3 
 
-through 
+Through:
+
 https://github.com/stiller/multipong/commit/a0d5cc841fde00ac72fbc1bb3bcf1059fbf792da
 
 Finally I converted the whole thing to an Elixir umbrella app, since that proved easier to deploy to Heroku.
