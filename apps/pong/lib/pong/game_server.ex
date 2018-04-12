@@ -31,7 +31,9 @@ defmodule Pong.GameServer do
     schedule_update(@interval)
     new_game = Game.update(state, @interval / 1000.0)
     if handler = Application.get_env(:pong, :handler) do
-      handler.output(new_game)
+      if new_game != state do
+        handler.output(new_game)
+      end
     end
     {:noreply, new_game}
   end

@@ -37,8 +37,8 @@ init flags =
         socket =
             Phoenix.Socket.init socketUrl
                 |> Phoenix.Socket.on "output" "game" ReceiveGameSummary
-                |> Phoenix.Socket.withDebug
 
+        --                |> Phoenix.Socket.withDebug
         channel =
             Phoenix.Channel.init "game"
 

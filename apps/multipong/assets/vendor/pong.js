@@ -13232,13 +13232,12 @@ var _user$project$Pong$init = function (flags) {
 		_elm_lang$core$Basics_ops['++'],
 		flags.wsUrl,
 		A2(_elm_lang$core$Basics_ops['++'], '?token=', flags.authToken));
-	var socket = _fbonetti$elm_phoenix_socket$Phoenix_Socket$withDebug(
-		A4(
-			_fbonetti$elm_phoenix_socket$Phoenix_Socket$on,
-			'output',
-			'game',
-			_user$project$Pong$ReceiveGameSummary,
-			_fbonetti$elm_phoenix_socket$Phoenix_Socket$init(socketUrl)));
+	var socket = A4(
+		_fbonetti$elm_phoenix_socket$Phoenix_Socket$on,
+		'output',
+		'game',
+		_user$project$Pong$ReceiveGameSummary,
+		_fbonetti$elm_phoenix_socket$Phoenix_Socket$init(socketUrl));
 	var _p15 = A2(_fbonetti$elm_phoenix_socket$Phoenix_Socket$join, channel, socket);
 	var newSocket = _p15._0;
 	var phxCmd = _p15._1;
